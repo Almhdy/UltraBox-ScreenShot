@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "UltraBox Screenshot",
+  "version": "1.0.0",
+  "description": "A powerful screenshot tool with resizable selection, full-page, and visible-area capture modes.",
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "UltraBox Screenshot"
+  },
+
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "permissions": ["activeTab", "storage", "downloads", "scripting", "tabs"],
+
+  "host_permissions": ["<all_urls>"],
+
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open UltraBox Screenshot popup"
+    },
+    "start-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+D",
+        "mac": "Command+Shift+D"
+      },
+      "description": "Start selection mode directly"
+    }
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["content/content.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UltraBox Screenshot</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <!-- ── Header ───────────────────────────────────────────────── -->
+    <header class="header" role="banner">
+      <div class="logo">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <rect
+            x="2"
+            y="4"
+            width="20"
+            height="14"
+            rx="2"
+            stroke="#7c9ef0"
+            stroke-width="2"
+          />
+          <circle cx="12" cy="11" r="3.5" stroke="#7c9ef0" stroke-width="2" />
+          <path
+            d="M8 4V3a1 1 0 011-1h6a1 1 0 011 1v1"
+            stroke="#7c9ef0"
+            stroke-width="1.5"
+          />
+        </svg>
+        <span>UltraBox</span>
+      </div>
+      <span class="version">v1.0</span>
+    </header>
+
+    <!-- ── Capture Mode Selector ─────────────────────────────────── -->
+    <section class="section" aria-labelledby="mode-label">
+      <label class="section-label" id="mode-label">Capture Mode</label>
+      <div class="mode-grid" role="radiogroup" aria-label="Capture mode">
+        <button
+          class="mode-btn"
+          id="mode-visible"
+          role="radio"
+          aria-checked="true"
+          data-mode="visible"
+          aria-label="Visible area"
+          title="Visible area"
+        >
+          <svg
+            class="mode-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect
+              x="2"
+              y="4"
+              width="20"
+              height="14"
+              rx="2"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M6 8h12M6 12h8"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span>Visible</span>
+        </button>
+
+        <button
+          class="mode-btn"
+          id="mode-fullpage"
+          role="radio"
+          aria-checked="false"
+          data-mode="fullpage"
+          aria-label="Full page"
+          title="Full page"
+        >
+          <svg
+            class="mode-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect
+              x="4"
+              y="2"
+              width="14"
+              height="18"
+              rx="2"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M4 14h14"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-dasharray="3 2"
+            />
+            <path
+              d="M8 6h6M8 10h4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span>Full Page</span>
+        </button>
+
+        <button
+          class="mode-btn"
+          id="mode-selection"
+          role="radio"
+          aria-checked="false"
+          data-mode="selection"
+          aria-label="Custom selection"
+          title="Custom selection"
+        >
+          <svg
+            class="mode-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 9V5a1 1 0 011-1h4"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M15 4h4a1 1 0 011 1v4"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M20 15v4a1 1 0 01-1 1h-4"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M9 20H5a1 1 0 01-1-1v-4"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <rect
+              x="8"
+              y="8"
+              width="8"
+              height="8"
+              rx="1"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-dasharray="2 1.5"
+            />
+          </svg>
+          <span>Selection</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Selection Dimensions ──────────────────────────────────── -->
+    <section
+      class="section dimensions-section"
+      id="dimensions-section"
+      aria-labelledby="dim-label"
+    >
+      <label class="section-label" id="dim-label">Dimensions (px)</label>
+      <div class="dimensions-row">
+        <div class="dim-field">
+          <label for="input-width" class="dim-label">W</label>
+          <input
+            type="number"
+            id="input-width"
+            class="dim-input"
+            min="1"
+            max="9999"
+            value="800"
+            placeholder="800"
+            aria-label="Width in pixels"
+          />
+        </div>
+        <span class="dim-separator" aria-hidden="true">×</span>
+        <div class="dim-field">
+          <label for="input-height" class="dim-label">H</label>
+          <input
+            type="number"
+            id="input-height"
+            class="dim-input"
+            min="1"
+            max="9999"
+            value="600"
+            placeholder="600"
+            aria-label="Height in pixels"
+          />
+        </div>
+        <button
+          class="btn-icon"
+          id="btn-reset-dims"
+          title="Reset to viewport size"
+          aria-label="Reset dimensions to viewport"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 12a9 9 0 109-9 9 9 0 00-6.164 2.428"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M3 3v6h6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Format Options ────────────────────────────────────────── -->
+    <section class="section" aria-labelledby="format-label">
+      <label class="section-label" id="format-label">Export Format</label>
+      <div class="format-row">
+        <select id="format-select" class="select" aria-label="Image format">
+          <option value="png">PNG (Lossless)</option>
+          <option value="jpeg">JPEG (Compressed)</option>
+        </select>
+        <div class="quality-row" id="quality-row" hidden>
+          <label for="quality-range" class="dim-label">Quality</label>
+          <input
+            type="range"
+            id="quality-range"
+            min="50"
+            max="100"
+            value="92"
+            aria-label="JPEG quality"
+            aria-valuemin="50"
+            aria-valuemax="100"
+            aria-valuenow="92"
+          />
+          <span id="quality-value" class="quality-val">92%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Actions ───────────────────────────────────────────────── -->
+    <section class="section actions-section">
+      <div class="action-row">
+        <button
+          class="btn-primary"
+          id="btn-capture"
+          aria-label="Capture screenshot"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <circle
+              cx="12"
+              cy="13"
+              r="4"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+          </svg>
+          Capture
+        </button>
+        <button
+          class="btn-secondary"
+          id="btn-copy"
+          aria-label="Copy screenshot to clipboard"
+          title="Copy to clipboard"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect
+              x="9"
+              y="9"
+              width="13"
+              height="13"
+              rx="2"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+          </svg>
+          Copy
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Status / Error Bar ─────────────────────────────────────── -->
+    <div
+      class="status-bar"
+      id="status-bar"
+      role="status"
+      aria-live="polite"
+      hidden
+    >
+      <span id="status-icon" aria-hidden="true"></span>
+      <span id="status-text"></span>
+    </div>
+
+    <!-- ── Keyboard Hints ─────────────────────────────────────────── -->
+    <footer class="footer" aria-label="Keyboard shortcuts">
+      <span class="kbd-hint"
+        ><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> Open</span
+      >
+      <span class="kbd-hint"
+        >In selection: <kbd>←↑↓→</kbd> nudge · <kbd>Enter</kbd> capture ·
+        <kbd>Esc</kbd> cancel</span
+      >
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

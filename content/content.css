@@ -1,0 +1,199 @@
+/* ============================================================
+   UltraBox Screenshot – Content Script Styles
+   Selection overlay, toolbar, resize handles
+   ============================================================ */
+
+/* ── Overlay Backdrop ─────────────────────────────────────── */
+#ultrabox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483645;
+  pointer-events: none;   /* Let mouse events pass through except on the box */
+  isolation: isolate;
+}
+
+/* Semi-transparent vignette around selection box */
+#ultrabox-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  backdrop-filter: blur(0.5px);
+  z-index: 0;
+}
+
+/* ── Selection Box ────────────────────────────────────────── */
+#ultrabox-box {
+  position: absolute;
+  z-index: 2147483646;
+  box-sizing: border-box;
+  pointer-events: auto;
+  cursor: grab;
+  outline: none;
+
+  /* Cut-out effect: box is transparent so the actual page shows through */
+  box-shadow:
+    0 0 0 9999px rgba(0, 0, 0, 0.45),  /* outer dark vignette */
+    0 0 0 2px rgba(91, 127, 238, 0.9),  /* selection border */
+    0 0 16px rgba(91, 127, 238, 0.4),   /* glow */
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+
+  border-radius: 2px;
+  transition: box-shadow 0.15s ease;
+}
+
+#ultrabox-box:focus-visible {
+  box-shadow:
+    0 0 0 9999px rgba(0, 0, 0, 0.45),
+    0 0 0 2.5px #7c9ef0,
+    0 0 20px rgba(91, 127, 238, 0.6),
+    inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* ── Dimension Label ─────────────────────────────────────── */
+#ultrabox-label {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 17, 23, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(91, 127, 238, 0.4);
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #c8d4f8;
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+  z-index: 1;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────── */
+#ultrabox-toolbar {
+  position: absolute;
+  bottom: -46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 17, 23, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  pointer-events: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 2;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.ultrabox-dim-input {
+  width: 60px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #e8eaf6;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  -moz-appearance: textfield;
+  transition: border-color 0.15s;
+}
+
+.ultrabox-dim-input::-webkit-inner-spin-button,
+.ultrabox-dim-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.ultrabox-dim-input:focus {
+  outline: none;
+  border-color: rgba(91, 127, 238, 0.8);
+  box-shadow: 0 0 0 2px rgba(91, 127, 238, 0.2);
+}
+
+.ultrabox-dim-sep {
+  color: rgba(255,255,255,0.3);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#ultrabox-capture-btn,
+#ultrabox-cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+#ultrabox-capture-btn {
+  background: linear-gradient(135deg, #5b7fee 0%, #7c5bf0 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(91,127,238,0.4);
+}
+
+#ultrabox-capture-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(91,127,238,0.55);
+}
+
+#ultrabox-capture-btn:active { transform: translateY(0); }
+
+#ultrabox-cancel-btn {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+#ultrabox-cancel-btn:hover {
+  background: rgba(224, 92, 110, 0.15);
+  color: #e05c6e;
+  border-color: rgba(224, 92, 110, 0.3);
+}
+
+/* ── Resize Handles ───────────────────────────────────────── */
+.ultrabox-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 2px solid #5b7fee;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(91, 127, 238, 0.5);
+  z-index: 3;
+  pointer-events: auto;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.ultrabox-handle:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 8px rgba(91, 127, 238, 0.8);
+}
+
+/* Positions */
+.ultrabox-handle-n  { top: -5px;  left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.ultrabox-handle-ne { top: -5px;  right: -5px; cursor: ne-resize; }
+.ultrabox-handle-e  { top: 50%;  right: -5px; transform: translateY(-50%); cursor: e-resize; }
+.ultrabox-handle-se { bottom: -5px; right: -5px; cursor: se-resize; }
+.ultrabox-handle-s  { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.ultrabox-handle-sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+.ultrabox-handle-w  { top: 50%;  left: -5px; transform: translateY(-50%); cursor: w-resize; }
+.ultrabox-handle-nw { top: -5px;  left: -5px; cursor: nw-resize; }
+
+/* Hover fix – prevent transform conflict when cursor changes */
+.ultrabox-handle-n:hover  { transform: translateX(-50%) scale(1.4); }
+.ultrabox-handle-s:hover  { transform: translateX(-50%) scale(1.4); }
+.ultrabox-handle-e:hover  { transform: translateY(-50%) scale(1.4); }
+.ultrabox-handle-w:hover  { transform: translateY(-50%) scale(1.4); }
