@@ -125,14 +125,27 @@ async function captureFullPage(tab) {
   if (!tab) throw new Error('No active tab found.');
 
   // 1. Page dimensions
+  // vh should be clientHeight to exclude horizontal scrollbars that might be in the capture.
+  // ph should be the maximum of various height metrics to ensure we cover the whole page.
   const [{ result: d }] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: () => ({
-      ph:  document.documentElement.scrollHeight,
-      vw:  window.innerWidth,
-      vh:  window.innerHeight,
-      dpr: window.devicePixelRatio || 1,
-    }),
+    func: async () => {
+      // Warm up: scroll a bit to trigger any lazy-loaded content
+      const scrollH = document.documentElement.scrollHeight;
+      window.scrollTo(0, scrollH);
+      await new Promise(r => setTimeout(r, 60));
+      window.scrollTo(0, 0);
+      await new Promise(r => setTimeout(r, 60));
+
+      const doc = document.documentElement;
+      const body = document.body;
+      return {
+        ph:  Math.max(doc.scrollHeight, body.scrollHeight, doc.offsetHeight, body.offsetHeight, doc.clientHeight),
+        vw:  window.innerWidth,
+        vh:  doc.clientHeight,
+        dpr: window.devicePixelRatio || 1,
+      };
+    },
   });
   const { ph, vw, vh, dpr } = d;
   const maxScrollY = Math.max(0, ph - vh);
@@ -179,20 +192,36 @@ async function captureFullPage(tab) {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => window.scrollTo(0, 0) });
   }
 
-  // 4. Stitch — each tile only contributes rows not yet drawn by a previous tile
-  const canvas = new OffscreenCanvas(vw, ph);
+  // 4. Stitch — each tile contributes unique rows to the final high-res image.
+  // We use DPR-scaled canvas for high resolution.
+  const canvas = new OffscreenCanvas(Math.round(vw * dpr), Math.round(ph * dpr));
   const ctx    = canvas.getContext('2d');
+
   for (let i = 0; i < tiles.length; i++) {
     const { scrollY: sy, dataUrl } = tiles[i];
     const resp   = await fetch(dataUrl);
     const bitmap = await createImageBitmap(await resp.blob());
+
+    // outStart/outEnd are in CSS pixels
     const outStart = i === 0 ? 0 : tiles[i - 1].scrollY + vh;
     const outEnd   = Math.min(sy + vh, ph);
     const outH     = outEnd - outStart;
+
     if (outH > 0) {
-      const srcYpx = Math.round((outStart - sy) * dpr);
-      const srcHpx = Math.min(Math.round(outH * dpr), bitmap.height - srcYpx);
-      if (srcHpx > 0) ctx.drawImage(bitmap, 0, srcYpx, bitmap.width, srcHpx, 0, outStart, vw, outH);
+      // Convert to physical pixels for drawImage
+      const dX = 0;
+      const dY = Math.round(outStart * dpr);
+      const dW = Math.round(vw * dpr);
+      const dH = Math.round(outH * dpr);
+
+      const sX = 0;
+      const sY = Math.round((outStart - sy) * dpr);
+      const sW = bitmap.width;
+      const sH = Math.min(dH, bitmap.height - sY);
+
+      if (sH > 0 && dW > 0 && dH > 0) {
+        ctx.drawImage(bitmap, sX, sY, sW, sH, dX, dY, dW, dH);
+      }
     }
     bitmap.close();
   }
