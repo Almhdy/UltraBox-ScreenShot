@@ -427,11 +427,12 @@ if (window.__ultraboxInjected) {
       img.onload = () => {
         const dpr    = window.devicePixelRatio || 1;
         const canvas = document.createElement('canvas');
-        canvas.width  = Math.max(1, Math.round(width  * dpr));
-        canvas.height = Math.max(1, Math.round(height * dpr));
+        // Output canvas matches the CSS-pixel selection size exactly
+        canvas.width  = Math.max(1, Math.round(width));
+        canvas.height = Math.max(1, Math.round(height));
         const ctx = canvas.getContext('2d');
 
-        // Clamp to image bounds
+        // Sample from the correct region of the high-DPI screenshot
         const sx = Math.max(0, vpX  * dpr);
         const sy = Math.max(0, vpY  * dpr);
         const sw = Math.min(width  * dpr, img.naturalWidth  - sx);
