@@ -42,11 +42,11 @@ if (window.__ultraboxInjected) {
     // Fire-and-forget mode: popup sends this and may close immediately.
     // The content script handles capture + download without a popup response.
     if (message.action === 'startSelectionDownload') {
-      state.resolveCapture  = null;
-      state.rejectCapture   = null;
+      state.resolveCapture = null;
+      state.rejectCapture = null;
       state.downloadSettings = {
-        format:          message.format  || 'png',
-        quality:         message.quality || 92,
+        format: message.format || 'png',
+        quality: message.quality || 92,
         copyToClipboard: message.copyToClipboard || false,
       };
       showOverlay(message.width || state.w, message.height || state.h, null, null);
@@ -59,7 +59,7 @@ if (window.__ultraboxInjected) {
       state.downloadSettings = null;
       startSelectionCapture(message.width, message.height)
         .then((dataUrl) => sendResponse({ success: true, dataUrl }))
-        .catch((err)    => sendResponse({ success: false, error: err.message }));
+        .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
     }
   });
@@ -69,7 +69,7 @@ if (window.__ultraboxInjected) {
   function startSelectionCapture(width, height) {
     return new Promise((resolve, reject) => {
       state.resolveCapture = resolve;
-      state.rejectCapture  = reject;
+      state.rejectCapture = reject;
       showOverlay(width, height, resolve, reject);
     });
   }
@@ -79,10 +79,10 @@ if (window.__ultraboxInjected) {
   function showOverlay(width, height, resolve, reject) {
     if (state.active) destroyOverlay();
 
-    state.w = width  || 800;
+    state.w = width || 800;
     state.h = height || 600;
     // Box lives inside position:fixed overlay — use viewport (not page) coordinates
-    state.x = Math.max(0, Math.round((window.innerWidth  - state.w) / 2));
+    state.x = Math.max(0, Math.round((window.innerWidth - state.w) / 2));
     state.y = Math.max(0, Math.round((window.innerHeight - state.h) / 2));
     state.active = true;
 
@@ -102,7 +102,7 @@ if (window.__ultraboxInjected) {
 
     // ── Label / dimensions display ─────────────────────────────────────────
     const label = document.createElement('div');
-    label.id    = 'ultrabox-label';
+    label.id = 'ultrabox-label';
     label.textContent = `${state.w} × ${state.h}`;
     box.appendChild(label);
 
@@ -111,7 +111,7 @@ if (window.__ultraboxInjected) {
     box.appendChild(toolbar);
 
     // ── Resize Handles ───────────────────────────────────────────────────────
-    const handlePositions = ['n','ne','e','se','s','sw','w','nw'];
+    const handlePositions = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
     handlePositions.forEach((pos) => {
       const h = document.createElement('div');
       h.className = `ultrabox-handle ultrabox-handle-${pos}`;
@@ -136,7 +136,7 @@ if (window.__ultraboxInjected) {
     toolbar.id = 'ultrabox-toolbar';
 
     // Dimension inputs
-    const wInput = makeInput('width',  state.w, 'Width in pixels');
+    const wInput = makeInput('width', state.w, 'Width in pixels');
     const xLabel = document.createElement('span');
     xLabel.className = 'ultrabox-dim-sep';
     xLabel.textContent = '×';
@@ -158,7 +158,6 @@ if (window.__ultraboxInjected) {
     const captureBtn = document.createElement('button');
     captureBtn.id = 'ultrabox-capture-btn';
     captureBtn.textContent = '↓ Capture';
-    captureBtn.title = 'Capture selection (Enter)';
     captureBtn.setAttribute('aria-label', 'Capture selected area');
     captureBtn.addEventListener('click', (e) => { e.stopPropagation(); doCapture(); });
 
@@ -166,7 +165,6 @@ if (window.__ultraboxInjected) {
     const cancelBtn = document.createElement('button');
     cancelBtn.id = 'ultrabox-cancel-btn';
     cancelBtn.textContent = '✕';
-    cancelBtn.title = 'Cancel (Esc)';
     cancelBtn.setAttribute('aria-label', 'Cancel selection');
     cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelCapture(); });
 
@@ -197,14 +195,14 @@ if (window.__ultraboxInjected) {
     if (!state.box) return;
 
     // Clamp to viewport (box is in fixed/viewport space)
-    const maxX = Math.max(0, window.innerWidth  - state.w);
+    const maxX = Math.max(0, window.innerWidth - state.w);
     const maxY = Math.max(0, window.innerHeight - state.h);
     state.x = Math.max(0, Math.min(state.x, maxX));
     state.y = Math.max(0, Math.min(state.y, maxY));
 
-    state.box.style.left   = state.x + 'px';
-    state.box.style.top    = state.y + 'px';
-    state.box.style.width  = state.w + 'px';
+    state.box.style.left = state.x + 'px';
+    state.box.style.top = state.y + 'px';
+    state.box.style.width = state.w + 'px';
     state.box.style.height = state.h + 'px';
 
     // Update label
@@ -231,12 +229,12 @@ if (window.__ultraboxInjected) {
     state.box.addEventListener('keydown', onKeyDown);
 
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup',   onMouseUp);
+    document.addEventListener('mouseup', onMouseUp);
   }
 
   function unbindEvents() {
     document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup',   onMouseUp);
+    document.removeEventListener('mouseup', onMouseUp);
   }
 
   // ─── Drag (Move) ──────────────────────────────────────────────────────────────
@@ -247,7 +245,7 @@ if (window.__ultraboxInjected) {
     e.preventDefault();
     state.dragging = true;
     state.startMouse = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-    state.startBox   = { x: state.x, y: state.y, w: state.w, h: state.h };
+    state.startBox = { x: state.x, y: state.y, w: state.w, h: state.h };
     state.box.style.cursor = 'grabbing';
   }
 
@@ -256,10 +254,10 @@ if (window.__ultraboxInjected) {
   function onHandleMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
-    state.resizing      = true;
-    state.resizeHandle  = e.currentTarget.dataset.pos;
-    state.startMouse    = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
-    state.startBox      = { x: state.x, y: state.y, w: state.w, h: state.h };
+    state.resizing = true;
+    state.resizeHandle = e.currentTarget.dataset.pos;
+    state.startMouse = { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+    state.startBox = { x: state.x, y: state.y, w: state.w, h: state.h };
   }
 
   // ─── Mouse Move ───────────────────────────────────────────────────────────────
@@ -280,17 +278,17 @@ if (window.__ultraboxInjected) {
       const MIN = 20;
 
       switch (state.resizeHandle) {
-        case 'e':  state.w = Math.max(MIN, ow + dx); break;
-        case 'w':  state.w = Math.max(MIN, ow - dx); state.x = ox + ow - state.w; break;
-        case 's':  state.h = Math.max(MIN, oh + dy); break;
-        case 'n':  state.h = Math.max(MIN, oh - dy); state.y = oy + oh - state.h; break;
+        case 'e': state.w = Math.max(MIN, ow + dx); break;
+        case 'w': state.w = Math.max(MIN, ow - dx); state.x = ox + ow - state.w; break;
+        case 's': state.h = Math.max(MIN, oh + dy); break;
+        case 'n': state.h = Math.max(MIN, oh - dy); state.y = oy + oh - state.h; break;
         case 'se': state.w = Math.max(MIN, ow + dx); state.h = Math.max(MIN, oh + dy); break;
         case 'sw': state.w = Math.max(MIN, ow - dx); state.x = ox + ow - state.w;
-                   state.h = Math.max(MIN, oh + dy); break;
+          state.h = Math.max(MIN, oh + dy); break;
         case 'ne': state.w = Math.max(MIN, ow + dx);
-                   state.h = Math.max(MIN, oh - dy); state.y = oy + oh - state.h; break;
+          state.h = Math.max(MIN, oh - dy); state.y = oy + oh - state.h; break;
         case 'nw': state.w = Math.max(MIN, ow - dx); state.x = ox + ow - state.w;
-                   state.h = Math.max(MIN, oh - dy); state.y = oy + oh - state.h; break;
+          state.h = Math.max(MIN, oh - dy); state.y = oy + oh - state.h; break;
       }
     }
 
@@ -300,9 +298,9 @@ if (window.__ultraboxInjected) {
   // ─── Mouse Up ─────────────────────────────────────────────────────────────────
 
   function onMouseUp() {
-    state.dragging      = false;
-    state.resizing      = false;
-    state.resizeHandle  = null;
+    state.dragging = false;
+    state.resizing = false;
+    state.resizeHandle = null;
     if (state.box) state.box.style.cursor = '';
   }
 
@@ -313,12 +311,12 @@ if (window.__ultraboxInjected) {
 
     switch (e.key) {
       case 'Escape': e.preventDefault(); cancelCapture(); break;
-      case 'Enter':  e.preventDefault(); doCapture();     break;
+      case 'Enter': e.preventDefault(); doCapture(); break;
 
-      case 'ArrowLeft':  e.preventDefault(); state.x -= step; updateBoxGeometry(); break;
+      case 'ArrowLeft': e.preventDefault(); state.x -= step; updateBoxGeometry(); break;
       case 'ArrowRight': e.preventDefault(); state.x += step; updateBoxGeometry(); break;
-      case 'ArrowUp':    e.preventDefault(); state.y -= step; updateBoxGeometry(); break;
-      case 'ArrowDown':  e.preventDefault(); state.y += step; updateBoxGeometry(); break;
+      case 'ArrowUp': e.preventDefault(); state.y -= step; updateBoxGeometry(); break;
+      case 'ArrowDown': e.preventDefault(); state.y += step; updateBoxGeometry(); break;
     }
   }
 
@@ -344,7 +342,7 @@ if (window.__ultraboxInjected) {
         // Popup is still open and waiting
         state.resolveCapture(cropped);
         state.resolveCapture = null;
-        state.rejectCapture  = null;
+        state.rejectCapture = null;
       } else {
         // Fire-and-forget: download directly without popup
         await downloadCaptured(cropped, state.downloadSettings);
@@ -355,7 +353,7 @@ if (window.__ultraboxInjected) {
       if (state.rejectCapture) {
         state.rejectCapture(err);
         state.resolveCapture = null;
-        state.rejectCapture  = null;
+        state.rejectCapture = null;
       }
       destroyOverlay();
     }
@@ -366,7 +364,7 @@ if (window.__ultraboxInjected) {
    * Used in fire-and-forget (startSelectionDownload) mode.
    */
   async function downloadCaptured(dataUrl, settings) {
-    const fmt  = settings?.format  || 'png';
+    const fmt = settings?.format || 'png';
     const qual = (settings?.quality || 92) / 100;
     const copy = settings?.copyToClipboard || false;
 
@@ -376,7 +374,7 @@ if (window.__ultraboxInjected) {
     }
 
     if (copy) {
-      const res  = await fetch(finalUrl);
+      const res = await fetch(finalUrl);
       const blob = await res.blob();
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       return;
@@ -397,7 +395,7 @@ if (window.__ultraboxInjected) {
       const img = new Image();
       img.onload = () => {
         const c = document.createElement('canvas');
-        c.width  = img.naturalWidth;
+        c.width = img.naturalWidth;
         c.height = img.naturalHeight;
         const ctx = c.getContext('2d');
         ctx.fillStyle = '#ffffff';
@@ -415,7 +413,7 @@ if (window.__ultraboxInjected) {
       state.rejectCapture(new Error('User cancelled.'));
     }
     state.resolveCapture = null;
-    state.rejectCapture  = null;
+    state.rejectCapture = null;
     destroyOverlay();
   }
 
@@ -425,17 +423,17 @@ if (window.__ultraboxInjected) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const dpr    = window.devicePixelRatio || 1;
+        const dpr = window.devicePixelRatio || 1;
         const canvas = document.createElement('canvas');
         // Output canvas matches the CSS-pixel selection size exactly
-        canvas.width  = Math.max(1, Math.round(width));
+        canvas.width = Math.max(1, Math.round(width));
         canvas.height = Math.max(1, Math.round(height));
         const ctx = canvas.getContext('2d');
 
         // Sample from the correct region of the high-DPI screenshot
-        const sx = Math.max(0, vpX  * dpr);
-        const sy = Math.max(0, vpY  * dpr);
-        const sw = Math.min(width  * dpr, img.naturalWidth  - sx);
+        const sx = Math.max(0, vpX * dpr);
+        const sy = Math.max(0, vpY * dpr);
+        const sw = Math.min(width * dpr, img.naturalWidth - sx);
         const sh = Math.min(height * dpr, img.naturalHeight - sy);
 
         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
@@ -453,14 +451,14 @@ if (window.__ultraboxInjected) {
     if (state.overlay && state.overlay.parentNode) {
       state.overlay.parentNode.removeChild(state.overlay);
     }
-    state.overlay   = null;
-    state.box       = null;
-    state.handles   = {};
-    state._wInput   = null;
-    state._hInput   = null;
-    state.active    = false;
-    state.dragging  = false;
-    state.resizing  = false;
+    state.overlay = null;
+    state.box = null;
+    state.handles = {};
+    state._wInput = null;
+    state._hInput = null;
+    state.active = false;
+    state.dragging = false;
+    state.resizing = false;
     window.__ultraboxActive = false;
   }
 
