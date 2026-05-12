@@ -376,7 +376,8 @@ if (window.__ultraboxInjected) {
     if (copy) {
       const res = await fetch(finalUrl);
       const blob = await res.blob();
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      const mimeType = blob.type || (fmt === 'jpeg' ? 'image/jpeg' : 'image/png');
+      await navigator.clipboard.write([new ClipboardItem({ [mimeType]: blob })]);
       return;
     }
 

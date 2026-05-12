@@ -21,7 +21,17 @@ chrome.commands.onCommand.addListener(async (command) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
       await injectContentIfNeeded(tab.id);
-      chrome.tabs.sendMessage(tab.id, { action: 'startSelection' });
+      // Load saved settings so format/quality/dimensions are honoured
+      const result = await chrome.storage.sync.get('ultraboxSettings');
+      const s = result.ultraboxSettings || {};
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'startSelectionDownload',
+        width: s.width || 800,
+        height: s.height || 600,
+        format: s.format || 'png',
+        quality: s.quality || 92,
+        copyToClipboard: false,
+      });
     }
   }
 });

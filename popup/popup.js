@@ -250,7 +250,7 @@ async function startCapture(copyToClipboard = false) {
     if (!dataUrl) throw new Error('Capture returned no data.');
 
     if (copyToClipboard) {
-      await copyDataUrlToClipboard(dataUrl);
+      await copyDataUrlToClipboard(dataUrl, formatSelect.value, parseInt(qualityRange.value, 10) / 100);
       showStatus('success', '✓', 'Copied to clipboard!');
     } else {
       await downloadCapture(dataUrl);
@@ -289,15 +289,17 @@ async function captureSelection(_tab) {
 
 // ─── Download & Clipboard ─────────────────────────────────────────────────────
 
+async function convertToFormat(dataUrl, fmt, qual) {
+  if (fmt === 'jpeg' && dataUrl.startsWith('data:image/png')) {
+    return await convertToJpeg(dataUrl, qual);
+  }
+  return dataUrl;
+}
+
 async function downloadCapture(dataUrl) {
   const fmt  = formatSelect.value;
   const qual = parseInt(qualityRange.value, 10) / 100;
-  let finalUrl = dataUrl;
-
-  // Convert to JPEG if needed
-  if (fmt === 'jpeg' && dataUrl.startsWith('data:image/png')) {
-    finalUrl = await convertToJpeg(dataUrl, qual);
-  }
+  const finalUrl = await convertToFormat(dataUrl, fmt, qual);
 
   const ts       = timestamp();
   const filename = `UltraBox_Screenshot_${ts}.${fmt}`;
@@ -308,6 +310,16 @@ async function downloadCapture(dataUrl) {
     format: fmt,
     filename,
   });
+}
+
+async function copyDataUrlToClipboard(dataUrl, fmt, qual) {
+  const finalUrl = await convertToFormat(dataUrl, fmt, qual);
+  const res  = await fetch(finalUrl);
+  const blob = await res.blob();
+  const mimeType = blob.type || (fmt === 'jpeg' ? 'image/jpeg' : 'image/png');
+  await navigator.clipboard.write([
+    new ClipboardItem({ [mimeType]: blob }),
+  ]);
 }
 
 async function convertToJpeg(pngDataUrl, quality = 0.92) {
@@ -325,39 +337,6 @@ async function convertToJpeg(pngDataUrl, quality = 0.92) {
     };
     img.onerror = () => reject(new Error('Failed to load image for JPEG conversion.'));
     img.src = pngDataUrl;
-  });
-}
-
-async function copyDataUrlToClipboard(dataUrl) {
-  // Fetch the blob from the data URL then write it
-  const res  = await fetch(dataUrl);
-  const blob = await res.blob();
-  // Normalise to PNG for clipboard (most reliable)
-  let pngBlob = blob;
-  if (blob.type !== 'image/png') {
-    pngBlob = await convertBlobToPng(blob);
-  }
-  await navigator.clipboard.write([
-    new ClipboardItem({ 'image/png': pngBlob }),
-  ]);
-}
-
-async function convertBlobToPng(blob) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const canvas  = document.createElement('canvas');
-      canvas.width  = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      canvas.toBlob((b) => {
-        URL.revokeObjectURL(url);
-        resolve(b);
-      }, 'image/png');
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed.')); };
-    img.src = url;
   });
 }
 
