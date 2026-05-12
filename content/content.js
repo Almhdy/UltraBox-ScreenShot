@@ -371,7 +371,7 @@ if (window.__ultraboxInjected) {
     let finalUrl = dataUrl;
     if (fmt === 'jpeg') {
       finalUrl = await toJpeg(dataUrl, qual);
-    } else if (fmt === 'png' && qual < 1) {
+    } else if (fmt === 'png') {
       finalUrl = await applyPngQuality(dataUrl, qual);
     }
 
@@ -442,18 +442,21 @@ if (window.__ultraboxInjected) {
         const ctx = c.getContext('2d');
         ctx.drawImage(img, 0, 0);
 
-        const imageData = ctx.getImageData(0, 0, c.width, c.height);
-        const data = imageData.data;
-        const levels = Math.round(4 + Math.pow(quality, 4) * 252);
-        const step = 255 / (levels - 1);
+        if (quality < 1) {
+          const imageData = ctx.getImageData(0, 0, c.width, c.height);
+          const data = imageData.data;
+          const levels = Math.round(4 + Math.pow(quality, 4) * 252);
+          const step = 255 / (levels - 1);
 
-        for (let i = 0; i < data.length; i += 4) {
-          data[i]     = Math.round(data[i] / step) * step;
-          data[i + 1] = Math.round(data[i + 1] / step) * step;
-          data[i + 2] = Math.round(data[i + 2] / step) * step;
+          for (let i = 0; i < data.length; i += 4) {
+            data[i]     = Math.round(data[i] / step) * step;
+            data[i + 1] = Math.round(data[i + 1] / step) * step;
+            data[i + 2] = Math.round(data[i + 2] / step) * step;
+          }
+
+          ctx.putImageData(imageData, 0, 0);
         }
 
-        ctx.putImageData(imageData, 0, 0);
         resolve(c.toDataURL('image/png'));
       };
       img.onerror = () => reject(new Error('PNG quality processing failed.'));
