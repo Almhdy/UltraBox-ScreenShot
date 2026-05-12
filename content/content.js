@@ -371,17 +371,23 @@ if (window.__ultraboxInjected) {
     let finalUrl = dataUrl;
     if (fmt === 'jpeg') {
       finalUrl = await toJpeg(dataUrl, qual);
+    } else if (fmt === 'png' && qual < 1) {
+      finalUrl = await applyPngQuality(dataUrl, qual);
     }
 
     if (copy) {
-      const res = await fetch(finalUrl);
+      // Normalise to PNG for clipboard – Chrome clipboards only reliably accept image/png
+      let pngUrl = finalUrl;
+      if (fmt === 'jpeg') {
+        pngUrl = await toPng(finalUrl);
+      }
+      const res = await fetch(pngUrl);
       const blob = await res.blob();
-      const mimeType = blob.type || (fmt === 'jpeg' ? 'image/jpeg' : 'image/png');
-      await navigator.clipboard.write([new ClipboardItem({ [mimeType]: blob })]);
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       return;
     }
 
-    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -1);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
     await chrome.runtime.sendMessage({
       action: 'downloadImage',
       dataUrl: finalUrl,
@@ -406,6 +412,52 @@ if (window.__ultraboxInjected) {
       };
       img.onerror = () => reject(new Error('JPEG conversion failed.'));
       img.src = pngDataUrl;
+    });
+  }
+
+  /** Convert any data URL to PNG (for clipboard normalisation). */
+  function toPng(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('PNG conversion failed.'));
+      img.src = dataUrl;
+    });
+  }
+
+  /** Apply quality reduction to PNG via colour posterisation. */
+  function applyPngQuality(dataUrl, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, c.width, c.height);
+        const data = imageData.data;
+        const levels = Math.round(4 + Math.pow(quality, 4) * 252);
+        const step = 255 / (levels - 1);
+
+        for (let i = 0; i < data.length; i += 4) {
+          data[i]     = Math.round(data[i] / step) * step;
+          data[i + 1] = Math.round(data[i + 1] / step) * step;
+          data[i + 2] = Math.round(data[i + 2] / step) * step;
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('PNG quality processing failed.'));
+      img.src = dataUrl;
     });
   }
 

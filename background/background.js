@@ -61,20 +61,9 @@ async function handleMessage(message, sender, sendResponse) {
         break;
       }
 
-      case 'captureSelection': {
-        const { dataUrl } = message;
-        sendResponse({ success: true, dataUrl });
-        break;
-      }
-
       case 'downloadImage': {
         const { dataUrl, format, filename } = message;
         await downloadImage(dataUrl, format, filename);
-        sendResponse({ success: true });
-        break;
-      }
-
-      case 'copyToClipboard': {
         sendResponse({ success: true });
         break;
       }
@@ -87,13 +76,6 @@ async function handleMessage(message, sender, sendResponse) {
 
       case 'saveSettings': {
         await chrome.storage.sync.set({ ultraboxSettings: message.settings });
-        sendResponse({ success: true });
-        break;
-      }
-
-      case 'injectContent': {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab) await injectContentIfNeeded(tab.id);
         sendResponse({ success: true });
         break;
       }

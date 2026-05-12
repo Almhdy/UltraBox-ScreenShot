@@ -149,11 +149,7 @@ function updateDimSectionVisibility() {
 // ─── Quality Visibility ───────────────────────────────────────────────────────
 
 function updateQualityVisibility() {
-  if (formatSelect.value === 'jpeg') {
-    qualityRow.removeAttribute('hidden');
-  } else {
-    qualityRow.setAttribute('hidden', '');
-  }
+  qualityRow.removeAttribute('hidden');
 }
 
 // ─── Dimension Reset ──────────────────────────────────────────────────────────
@@ -293,6 +289,9 @@ async function convertToFormat(dataUrl, fmt, qual) {
   if (fmt === 'jpeg' && dataUrl.startsWith('data:image/png')) {
     return await convertToJpeg(dataUrl, qual);
   }
+  if (fmt === 'png' && qual < 1) {
+    return await applyPngQuality(dataUrl, qual);
+  }
   return dataUrl;
 }
 
@@ -313,13 +312,31 @@ async function downloadCapture(dataUrl) {
 }
 
 async function copyDataUrlToClipboard(dataUrl, fmt, qual) {
-  const finalUrl = await convertToFormat(dataUrl, fmt, qual);
-  const res  = await fetch(finalUrl);
+  const convertedUrl = await convertToFormat(dataUrl, fmt, qual);
+  // Normalise to PNG for clipboard – Chrome clipboards only reliably accept image/png
+  const pngUrl = convertedUrl.startsWith('data:image/png')
+    ? convertedUrl
+    : await dataUrlToPng(convertedUrl);
+  const res  = await fetch(pngUrl);
   const blob = await res.blob();
-  const mimeType = blob.type || (fmt === 'jpeg' ? 'image/jpeg' : 'image/png');
   await navigator.clipboard.write([
-    new ClipboardItem({ [mimeType]: blob }),
+    new ClipboardItem({ 'image/png': blob }),
   ]);
+}
+
+async function dataUrlToPng(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('Failed to convert image to PNG.'));
+    img.src = dataUrl;
+  });
 }
 
 async function convertToJpeg(pngDataUrl, quality = 0.92) {
@@ -337,6 +354,36 @@ async function convertToJpeg(pngDataUrl, quality = 0.92) {
     };
     img.onerror = () => reject(new Error('Failed to load image for JPEG conversion.'));
     img.src = pngDataUrl;
+  });
+}
+
+/** Apply quality reduction to PNG via colour posterisation. */
+async function applyPngQuality(dataUrl, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const levels = Math.round(4 + Math.pow(quality, 4) * 252);
+      const step = 255 / (levels - 1);
+
+      for (let i = 0; i < data.length; i += 4) {
+        data[i]     = Math.round(data[i] / step) * step;
+        data[i + 1] = Math.round(data[i + 1] / step) * step;
+        data[i + 2] = Math.round(data[i + 2] / step) * step;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('Failed to load image for PNG quality processing.'));
+    img.src = dataUrl;
   });
 }
 
