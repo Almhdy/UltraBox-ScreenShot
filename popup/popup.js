@@ -225,6 +225,16 @@ async function startCapture(copyToClipboard = false) {
       dataUrl = await captureFullPage(tab);
 
     } else if (currentMode === 'selection') {
+      // Inject content script if not already present (activeTab grants access
+      // since the user clicked the action button).
+      try {
+        await chrome.runtime.sendMessage({ action: 'injectContent', tabId: tab.id });
+      } catch (e) {
+        showStatus('error', '✕', 'Cannot access this page. Reload and try again.');
+        setLoadingState(false);
+        return;
+      }
+
       // Selection is fire-and-forget: the content script shows the overlay and
       // handles download directly, because the popup closes the moment the user
       // clicks the page to interact with the overlay (killing our response channel).

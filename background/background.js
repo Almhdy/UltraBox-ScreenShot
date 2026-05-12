@@ -20,7 +20,12 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'start-selection') {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
-      await injectContentIfNeeded(tab.id);
+      try {
+        await injectContentIfNeeded(tab.id);
+      } catch (e) {
+        console.warn('[UltraBox] Could not inject content script via command:', e.message);
+        return;
+      }
       // Load saved settings so format/quality/dimensions are honoured
       const result = await chrome.storage.sync.get('ultraboxSettings');
       const s = result.ultraboxSettings || {};
@@ -76,6 +81,12 @@ async function handleMessage(message, sender, sendResponse) {
 
       case 'saveSettings': {
         await chrome.storage.sync.set({ ultraboxSettings: message.settings });
+        sendResponse({ success: true });
+        break;
+      }
+
+      case 'injectContent': {
+        await injectContentIfNeeded(message.tabId);
         sendResponse({ success: true });
         break;
       }

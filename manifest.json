@@ -27,19 +27,7 @@
     "type": "module"
   },
 
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content/content.js"],
-      "css": ["content/content.css"],
-      "run_at": "document_idle",
-      "all_frames": false
-    }
-  ],
-
   "permissions": ["activeTab", "storage", "downloads", "scripting", "tabs"],
-
-  "host_permissions": ["<all_urls>"],
 
   "commands": {
     "_execute_action": {
@@ -56,12 +44,5 @@
       },
       "description": "Start selection mode directly"
     }
-  },
-
-  "web_accessible_resources": [
-    {
-      "resources": ["content/content.css"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
