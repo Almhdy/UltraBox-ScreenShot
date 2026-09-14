@@ -54,7 +54,7 @@
 /* ── Dimension Label ─────────────────────────────────────── */
 #ultrabox-label {
   position: absolute;
-  top: -26px;
+  top: -32px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(15, 17, 23, 0.9);
@@ -75,7 +75,7 @@
 /* ── Toolbar ──────────────────────────────────────────────── */
 #ultrabox-toolbar {
   position: absolute;
-  bottom: -46px;
+  bottom: -54px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;

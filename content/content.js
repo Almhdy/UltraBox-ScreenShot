@@ -25,6 +25,7 @@ if (window.__ultraboxInjected) {
     startMouse: null,
     startBox: null,
     active: false,
+    capturing: false,
     resolveCapture: null,   // set when popup is waiting for response
     rejectCapture: null,
     downloadSettings: null, // set when popup is closed (fire-and-forget mode)
@@ -125,7 +126,7 @@ if (window.__ultraboxInjected) {
     document.body.appendChild(overlay);
 
     updateBoxGeometry();
-    box.focus();
+    box.focus({ preventScroll: true });
     bindEvents();
   }
 
@@ -212,6 +213,53 @@ if (window.__ultraboxInjected) {
     // Update dimension inputs in toolbar
     if (state._wInput) state._wInput.value = state.w;
     if (state._hInput) state._hInput.value = state.h;
+
+    positionFloatingChrome();
+  }
+
+  // Keep the toolbar and label inside the viewport, whatever the box size.
+  function positionFloatingChrome() {
+    if (!state.box) return;
+
+    const toolbar = state.box.querySelector('#ultrabox-toolbar');
+    const label = state.box.querySelector('#ultrabox-label');
+    const GAP = 12; // breathing room between the box and the floating chrome
+    const PAD = 8;
+    const vh = window.innerHeight;
+    let toolbarAbove = false;
+
+    if (toolbar) {
+      const offset = (toolbar.offsetHeight || 42) + GAP;
+      const fitsBelow = state.y + state.h + offset <= vh;
+      const fitsAbove = state.y - offset >= 0;
+
+      // Default: hanging below the box
+      toolbar.style.top = 'auto';
+      toolbar.style.bottom = `-${offset}px`;
+
+      if (!fitsBelow) {
+        if (fitsAbove) {
+          // Flip above the box
+          toolbarAbove = true;
+          toolbar.style.bottom = 'auto';
+          toolbar.style.top = `-${offset}px`;
+        } else {
+          // No room outside – pin it inside the visible part of the box
+          const height = toolbar.offsetHeight || 42;
+          const maxTop = vh - height - PAD;
+          const top = Math.max(state.y + PAD, Math.min(state.y + state.h - height - PAD, maxTop));
+          toolbar.style.bottom = 'auto';
+          toolbar.style.top = `${top - state.y}px`;
+        }
+      }
+    }
+
+    if (label) {
+      // Move the label inside when there's no room above (or the toolbar is up there)
+      const labelOffset = (label.offsetHeight || 20) + GAP;
+      const labelUp = !toolbarAbove && state.y >= labelOffset + 4;
+      label.style.top = labelUp ? `-${labelOffset}px` : `${PAD}px`;
+    }
   }
 
   // ─── Event Binding ────────────────────────────────────────────────────────────
@@ -225,14 +273,41 @@ if (window.__ultraboxInjected) {
       h.addEventListener('mousedown', onHandleMouseDown);
     });
 
-    // Keyboard shortcuts
-    state.box.addEventListener('keydown', onKeyDown);
+    // Clicking the dark backdrop shouldn't lose focus – keep the box focused
+    state.overlay.addEventListener('mousedown', onOverlayMouseDown);
+
+    // Keyboard shortcuts – listen on document (capture phase) so Enter/Escape
+    // work even when the box doesn't hold focus (e.g. after clicking backdrop).
+    document.addEventListener('keydown', onKeyDown, true);
+
+    // Re-focus the box when the page regains focus (e.g. after popup closes)
+    window.addEventListener('focus', refocusBox);
+
+    // Keep the toolbar/label inside the viewport when the window is resized
+    window.addEventListener('resize', updateBoxGeometry);
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
   }
 
+  function onOverlayMouseDown(e) {
+    if (e.target.closest && e.target.closest('#ultrabox-box')) return;
+    if (state.box) state.box.focus({ preventScroll: true });
+  }
+
+  function refocusBox() {
+    if (!state.active || !state.box) return;
+    const ae = document.activeElement;
+    if (!ae || ae === document.body || ae === document.documentElement) {
+      state.box.focus({ preventScroll: true });
+    }
+  }
+
   function unbindEvents() {
+    if (state.overlay) state.overlay.removeEventListener('mousedown', onOverlayMouseDown);
+    document.removeEventListener('keydown', onKeyDown, true);
+    window.removeEventListener('focus', refocusBox);
+    window.removeEventListener('resize', updateBoxGeometry);
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
   }
@@ -307,12 +382,30 @@ if (window.__ultraboxInjected) {
   // ─── Keyboard ─────────────────────────────────────────────────────────────────
 
   function onKeyDown(e) {
+    if (!state.active) return;
+
+    // Enter / Escape always work, regardless of what is focused
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      doCapture();
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelCapture();
+      return;
+    }
+
+    // Let text fields handle their own keys (typing, arrows, stepping)
+    const target = e.target;
+    const editable = target instanceof Element &&
+      target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]');
+    if (editable) return;
+
     const step = e.shiftKey ? 10 : 1;
 
     switch (e.key) {
-      case 'Escape': e.preventDefault(); cancelCapture(); break;
-      case 'Enter': e.preventDefault(); doCapture(); break;
-
       case 'ArrowLeft': e.preventDefault(); state.x -= step; updateBoxGeometry(); break;
       case 'ArrowRight': e.preventDefault(); state.x += step; updateBoxGeometry(); break;
       case 'ArrowUp': e.preventDefault(); state.y -= step; updateBoxGeometry(); break;
@@ -323,14 +416,15 @@ if (window.__ultraboxInjected) {
   // ─── Capture & Cancel ─────────────────────────────────────────────────────────
 
   async function doCapture() {
-    if (!state.active) return;
+    if (!state.active || state.capturing) return;
+    state.capturing = true;
 
     try {
+      // Hide the whole selection UI so it never appears in the screenshot
       state.overlay.style.visibility = 'hidden';
       await sleep(80);
 
       const res = await chrome.runtime.sendMessage({ action: 'captureVisible' });
-      state.overlay.style.visibility = '';
       if (!res?.success) throw new Error(res?.error || 'Capture failed.');
 
       // state.x/y are viewport-space (box is position:fixed), crop directly
@@ -348,7 +442,7 @@ if (window.__ultraboxInjected) {
         await downloadCaptured(cropped, state.downloadSettings);
       }
     } catch (err) {
-      state.overlay.style.visibility = '';
+      if (state.overlay) state.overlay.style.visibility = '';
       console.error('[UltraBox] Selection capture error:', err);
       if (state.rejectCapture) {
         state.rejectCapture(err);
@@ -465,6 +559,7 @@ if (window.__ultraboxInjected) {
   }
 
   function cancelCapture() {
+    if (state.capturing) return;
     if (state.rejectCapture) {
       state.rejectCapture(new Error('User cancelled.'));
     }
@@ -513,6 +608,7 @@ if (window.__ultraboxInjected) {
     state._wInput = null;
     state._hInput = null;
     state.active = false;
+    state.capturing = false;
     state.dragging = false;
     state.resizing = false;
     window.__ultraboxActive = false;

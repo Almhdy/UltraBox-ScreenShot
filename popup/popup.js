@@ -236,21 +236,24 @@ async function startCapture(copyToClipboard = false) {
       }
 
       // Selection is fire-and-forget: the content script shows the overlay and
-      // handles download directly, because the popup closes the moment the user
-      // clicks the page to interact with the overlay (killing our response channel).
+      // handles download directly. The popup closes immediately so the screen
+      // hides and the page regains keyboard focus (Enter/Escape work at once).
       await saveSettings(); // ensure format/quality are up-to-date in storage
       const dims = getDimensions();
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'startSelectionDownload',
-        width:  dims.width,
-        height: dims.height,
-        copyToClipboard,
-        format:  formatSelect.value,
-        quality: parseInt(qualityRange.value, 10),
-      }).catch(() => {});
-      showStatus('info', '↗', 'Draw selection → Enter to capture, Esc to cancel');
-      setLoadingState(false);
-      return; // don't proceed to download in popup
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'startSelectionDownload',
+          width:  dims.width,
+          height: dims.height,
+          copyToClipboard,
+          format:  formatSelect.value,
+          quality: parseInt(qualityRange.value, 10),
+        });
+      } catch (_) {
+        // Content script may be unavailable – nothing left to do, just close.
+      }
+      window.close();
+      return; // popup is closed – content script owns the rest
     }
 
     if (!dataUrl) throw new Error('Capture returned no data.');
